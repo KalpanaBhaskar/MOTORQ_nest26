@@ -1,5 +1,5 @@
 import datetime  # for early bird offer and velocity - demand based pricing 
-
+#coordinates follow zero based indexing
 master_list = []
 def register_event(name,date,rows,cols,base_price,revenue=0):
     event = {}
@@ -210,10 +210,44 @@ def calc_price_vip(name,row,col,booking_date):
                 return None
     print("Event not found.")
     return None
-#menu driven with create and delete event , do and cancel booking,view availability
+
+def automatic_book_seat_normal(name,num_seats):
+    for event in master_list:
+        if event['name'] ==name:
+            seating =event['seating']
+            rows =len(seating)
+            cols =len(seating[0])
+            available_seats =[]
+            for r in range(rows,-1,-1):
+                for c in range(cols):
+                    if seating[r][c] ==0:
+                        available_seats.append((r,c))
+            if len(available_seats) < num_seats:
+                print(f"Only {len(available_seats)} seats available")
+                return
+            #available_seats=     - from this step llms are used
+            suggested_seats = available_seats[:num_seats]
+            print(f"Suggested seats for '{name}': {suggested_seats}")
+            confirm =input("book these seats? (yes/no): ")
+            if confirm.lower() == 'yes':
+                total_price =0
+                for seat in suggested_seats:
+                    r,c =seat
+                    seating[r][c] =1
+                    price =calc_price(name,r,c,datetime.datetime.now().strftime("%Y-%m-%d"))
+                    total_price +=price
+                event['revenue'] += total_price
+                print(f"Seats {suggested_seats} successfully booked for '{name}'. Total payment: {total_price:.2f}")
+            else:
+                print("Booking cancelled.")
+            return
+    print("Event not found.")
+
+
+#menu driven with create and delete event , do and cancel booking,view availability , autobooking
 choice =0
 while choice !=6:
-    print("1. create an event\n2. book a ticket\n3. withdraw a ticket\n4. delete an event\n5. view seat availability\n6.break")
+    print("1. create an event\n2. book a ticket\n3. withdraw a ticket\n4. delete an event\n5. view seat availability\n6.autobook normal seats\n7.break")
     choice =int(input("enter choice: "))
     if choice==1:
         name =input("event name: ")
@@ -256,10 +290,11 @@ while choice !=6:
             seat_availability_normal(name,row,col)
         elif mode=="vip":
             seat_availability_vip(name,row,col)
-
-    #choice =int(input("enter choice: "))
-
-
-
-
-
+    
+    elif choice==6:
+        name =input("event name: ")
+        num_seats =int(input("number of seats to auto book: "))
+        automatic_book_seat_normal(name,num_seats) 
+    elif choice==7:
+        break
+        
